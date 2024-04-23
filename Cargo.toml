@@ -1,0 +1,7 @@
+[workspace]
+name = "anchor-introspection"
+members = [
+    "./crates/anchor-introspection",
+    "./crates/anchor-introspection-derive"
+]
+resolver = "2"
