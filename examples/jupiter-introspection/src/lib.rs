@@ -204,7 +204,11 @@ mod jupiter_program {
     #[derive(TryFromInstruction)]
     pub struct SetTokenLedger<'info> {
         pub accounts: SetTokenLedgerAccounts<'info>,
+        pub args: SetTokenLedgerArgs
     }
+
+    #[derive(AnchorDeserialize, AnchorSerialize)]
+    pub struct SetTokenLedgerArgs {}
 
     #[derive(TryFromAccountMetas)]
     pub struct SetTokenLedgerAccounts<'info> {
@@ -216,7 +220,11 @@ mod jupiter_program {
     #[derive(TryFromInstruction)]
     pub struct CreateOpenOrders<'info> {
         pub accounts: CreateOpenOrdersAccounts<'info>,
+        pub args: CreateOpenOrdersArgs
     }
+
+    #[derive(AnchorDeserialize, AnchorSerialize)]
+    pub struct CreateOpenOrdersArgs {}
 
     #[derive(TryFromAccountMetas)]
     pub struct CreateOpenOrdersAccounts<'info> {
@@ -299,7 +307,11 @@ mod jupiter_program {
     #[derive(TryFromInstruction)]
     pub struct CreateTokenLedger<'info> {
         pub accounts: CreateTokenLedgerAccounts<'info>,
+        pub args: CreateTokenLedgerArgs
     }
+
+    #[derive(AnchorDeserialize, AnchorSerialize)]
+    pub struct CreateTokenLedgerArgs {}
 
     #[derive(TryFromAccountMetas)]
     pub struct CreateTokenLedgerAccounts<'info> {
