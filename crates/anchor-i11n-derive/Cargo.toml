@@ -10,5 +10,5 @@ proc-macro = true
 [dependencies]
 syn = "1"
 quote = "1"
-anchor-lang = "0.30.0"
+anchor-lang = "^0.29.0"
 sha2 = "0.10.0"

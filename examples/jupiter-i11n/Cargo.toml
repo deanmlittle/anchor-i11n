@@ -8,5 +8,5 @@ edition = "2021"
 name = "jupiter_i11n"
 
 [dependencies] 
-anchor-lang = "0.30.0"
+anchor-lang = "^0.29.0"
 anchor-i11n = { path = "../../crates/anchor-i11n" }
