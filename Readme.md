@@ -1,3 +1,3 @@
-# Anchor Introspection
+# Anchor i11n
 
-A set of helper macros that allows for more idiomatic usage of Instruction Introspection with Anchor programs. 
+A set of helper macros that allows for more idiomatic usage of Instruction Introspection (i11n) with Anchor programs. 
