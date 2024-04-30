@@ -8,17 +8,6 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     let context_struct = parse_macro_input!(input as DeriveInput);
     let context_name = &context_struct.ident;
 
-    let mut hasher = Sha256::new();
-    hasher.update(format!("global:{}", context_name.to_string()).as_bytes());
-
-    let mut discriminator_bytes: [u8;8] = [0u8;8];
-    discriminator_bytes.clone_from_slice(&hasher.finalize().to_vec()[..8]);
-
-    let discriminator: Vec<_> = discriminator_bytes.into_iter().map(|i| {
-        let idx = i as u8;
-        quote! { #idx }
-    }).collect();
-
     // Extract lifetime from the generic parameters, if any
     let lifetime = match context_struct
     .generics
@@ -67,9 +56,20 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     // Unwrap is safe here because we ensure both fields are present
     let (accounts_type, args_type) = (has_accounts_type.unwrap(), has_args_type.unwrap());
 
+    let mut hasher = Sha256::new();
+    hasher.update(format!("global:{}", args_type.to_string()).as_bytes());
+
+    let mut discriminator_bytes: [u8;8] = [0u8;8];
+    discriminator_bytes.clone_from_slice(&hasher.finalize().to_vec()[..8]);
+
+    let discriminator: Vec<_> = discriminator_bytes.into_iter().map(|i| {
+        let idx = i as u8;
+        quote! { #idx }
+    }).collect();
+
     // Generate the discriminator
     let expanded = quote! {
-        impl<#lifetime> Discriminator for #context_name<#lifetime> {
+        impl<#lifetime> Discriminator for #args_type<#lifetime> {
             const DISCRIMINATOR: [u8; 8] = [#(#discriminator),*];
             fn discriminator() -> [u8; 8] {
                 Self::DISCRIMINATOR
