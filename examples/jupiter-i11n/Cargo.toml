@@ -9,4 +9,4 @@ name = "jupiter_i11n"
 
 [dependencies] 
 anchor-lang = "0.30.0"
-anchor-introspection = { path = "../../crates/anchor-i11n" }
+anchor-i11n = { path = "../../crates/anchor-i11n" }
