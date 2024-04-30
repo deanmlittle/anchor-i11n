@@ -1,7 +1,7 @@
 [workspace]
-name = "anchor-introspection"
+name = "anchor-i11n"
 members = [
-    "./crates/anchor-introspection",
-    "./crates/anchor-introspection-derive"
+    "./crates/anchor-i11n",
+    "./crates/anchor-i11n-derive"
 ]
 resolver = "2"

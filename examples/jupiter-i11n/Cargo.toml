@@ -1,0 +1,12 @@
+[package]
+name = "jupiter-i11n"
+authors = ["Dean Little <@deanmlittle>"]
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "jupiter_i11n"
+
+[dependencies] 
+anchor-lang = "0.30.0"
+anchor-introspection = { path = "../../crates/anchor-i11n" }

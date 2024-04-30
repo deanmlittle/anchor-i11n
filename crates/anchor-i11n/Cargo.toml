@@ -1,0 +1,12 @@
+[package]
+name = "anchor-i11n"
+authors = ["Dean Little <@deanmlittle>"]
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "anchor_i11n"
+
+[dependencies] 
+anchor-lang = "0.30.0"
+anchor-i11n-derive = { path = "../anchor-i11n-derive" }

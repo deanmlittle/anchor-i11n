@@ -14,6 +14,8 @@ mod jupiter_program {
         pub args: RouteArgs
     }
 
+    let ctx = Route::try_from_instruction(&ix)?;
+
     #[derive(AnchorDeserialize, AnchorSerialize)]
     pub struct RouteArgs {
         pub route_plan: Vec<RoutePlanStep>,

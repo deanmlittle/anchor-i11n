@@ -163,6 +163,25 @@ pub fn try_from_account_metas(input: TokenStream) -> TokenStream {
         let idx = syn::Index::from(i);
         quote! { &value[#idx] }
     }).collect();
+
+    let account_generators = match account_names.len() > 0 {
+        true => quote! {
+            if value.len() < #accounts_length {
+                return Err(ProgramError::NotEnoughAccountKeys.into());
+            }
+
+            let [#(#account_names),*] = [#(#value_indices),*];
+
+            #(#optional_accounts)*
+
+            Ok(Self {
+                #(#account_names),*
+            })
+        },
+        false => quote! {
+            Ok(Self {})
+        }
+    };
     
     // Generate the implementation
     let expanded = quote! {
@@ -174,13 +193,7 @@ pub fn try_from_account_metas(input: TokenStream) -> TokenStream {
                     return Err(ProgramError::NotEnoughAccountKeys.into());
                 }
 
-                let [#(#account_names),*] = [#(#value_indices),*];
-
-                #(#optional_accounts)*
-
-                Ok(Self {
-                    #(#account_names),*
-                })
+                #account_generators
             }
         }
     };
