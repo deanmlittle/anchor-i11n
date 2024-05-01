@@ -9,6 +9,7 @@ pub mod prelude {
 
 #[cfg(test)]
 mod tests {
+    use crate::prelude::*;
     use anchor_lang::{solana_program::pubkey, AnchorSerialize};
     use hex_literal::hex;
     use solana_program::{instruction::{AccountMeta, Instruction}, pubkey::Pubkey};
@@ -160,5 +161,12 @@ mod tests {
         assert_eq!(ctx.accounts.source_mint.pubkey, pubkey!("DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"));
         assert_eq!(ctx.args.try_to_vec().unwrap(), &hex!("0f04000000261e000317013c000417010a00031c00640304002027b8ba04000034f881a201000000320000"));
         assert_eq!(ctx.remaining_accounts.len(), 40);
+    }
+
+    #[test]
+    fn test_discriminator() {
+        #[derive(AnchorDiscriminator)]
+        struct IX {};
+        assert_eq!(IX::DISCRIMINATOR, hex!("1c693616723a62b5"))
     }
 }
