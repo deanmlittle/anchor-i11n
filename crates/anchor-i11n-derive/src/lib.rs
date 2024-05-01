@@ -1,4 +1,5 @@
-use proc_macro::TokenStream;
+use convert_case::{Case, Casing};
+use proc_macro::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, Type};
 use sha2::{Sha256, Digest};
@@ -20,8 +21,8 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
         None => quote!{}
     };
 
-    let mut has_accounts_type = None;
-    let mut has_args_type = None;
+    let mut has_accounts_path = None;
+    let mut has_args_path = None;
 
     if let Data::Struct(data_struct) = &context_struct.data {
         if let Fields::Named(fields) = &data_struct.fields {
@@ -30,19 +31,33 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
                     match ident.to_string().as_str() {
                         "accounts" => {
                             if let Type::Path(type_path) = &field.ty {
-                                if let Some(segment) = type_path.path.segments.last() {
-                                    has_accounts_type = Some(segment.ident.clone());
+                                let mut new_type_path = type_path.clone();
+                                if let Some(last_segment) = new_type_path.path.segments.last_mut() {
+                                    if let syn::PathArguments::AngleBracketed(ref mut args) = &mut last_segment.arguments {
+                                        let mut lifetime_name = String::new();
+                                        if let Some(arg) = args.args.first() {
+                                            if let syn::GenericArgument::Lifetime(lifetime) = arg {
+                                                lifetime_name = lifetime.ident.to_string();
+                                            }
+                                        }
+                                        // Change the lifetime notation from angle bracketed to colon2 separated
+                                        if let Some(colon_lifetime) = lifetime_name.rfind('\'') {
+                                            let new_lifetime_name = &lifetime_name[colon_lifetime + 1..];
+                                            args.args.clear(); // Remove the angle bracketed lifetime
+                                            args.args.push(syn::GenericArgument::Lifetime(syn::Lifetime::new(new_lifetime_name, Span::call_site().into())));
+                                        }
+                                    }
                                 }
+                                has_accounts_path = Some(new_type_path);
                             }
                         }
                         "args" => {
                             if let Type::Path(type_path) = &field.ty {
-                                if let Some(segment) = type_path.path.segments.last() {
-                                    has_args_type = Some(segment.ident.clone());
-                                }
+                                has_args_path = Some(type_path);
                             }
                         }
-                        _ => panic!("Expected field name of \"accounts\" or \"args\"."),
+                        "remaining_accounts" => {}
+                        _ => panic!("Expected field name of \"accounts\", \"args\" or \"remaining_accounts\""),
                     }
                 }
             }
@@ -54,10 +69,43 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     }
 
     // Unwrap is safe here because we ensure both fields are present
-    let (accounts_type, args_type) = (has_accounts_type.unwrap(), has_args_type.unwrap());
+    let (accounts_path, args_path) = (has_accounts_path.unwrap(), has_args_path.unwrap());
 
+    // Generate the discriminator
+    let expanded = quote! {
+        impl<#lifetime> TryFrom<&#lifetime anchor_lang::solana_program::instruction::Instruction> for #context_name<#lifetime> {
+            type Error = Error;
+    
+            fn try_from(ix: &#lifetime anchor_lang::solana_program::instruction::Instruction) -> Result<#context_name<#lifetime>> {
+                require_keys_eq!(ix.program_id, ID, ErrorCode::InvalidProgramId);
+
+                require!(ix.data[..8].eq(&#args_path::DISCRIMINATOR), ErrorCode::InstructionDidNotDeserialize);
+
+                let accounts = #accounts_path::try_from(&ix.accounts)?;
+                let remaining_accounts = #accounts_path::try_remaining_accounts_from(&ix.accounts)?;
+                let args = #args_path::try_from_slice(&ix.data[8..])?;
+
+                Ok(#context_name {
+                    accounts,
+                    args,
+                    remaining_accounts
+                })
+            }
+        }
+    };
+
+    // Convert the generated implementation back into tokens and return it
+    TokenStream::from(expanded)
+}
+
+
+// Derive the discriminator from an instruction struct
+#[proc_macro_derive(AnchorDiscriminator)]
+pub fn anchor_discriminator(input: TokenStream) -> TokenStream {
+    let args_struct = parse_macro_input!(input as DeriveInput);
+    let args_type = &args_struct.ident;
     let mut hasher = Sha256::new();
-    hasher.update(format!("global:{}", args_type.to_string()).as_bytes());
+    hasher.update(format!("global:{}", args_type.to_string().to_case(Case::Snake)).as_bytes());
 
     let mut discriminator_bytes: [u8;8] = [0u8;8];
     discriminator_bytes.clone_from_slice(&hasher.finalize().to_vec()[..8]);
@@ -67,36 +115,15 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
         quote! { #idx }
     }).collect();
 
-    // Generate the discriminator
-    let expanded = quote! {
-        impl<#lifetime> Discriminator for #args_type<#lifetime> {
+
+    quote! { 
+        impl Discriminator for #args_type {
             const DISCRIMINATOR: [u8; 8] = [#(#discriminator),*];
             fn discriminator() -> [u8; 8] {
                 Self::DISCRIMINATOR
             }
         }
-
-        impl<#lifetime> TryFrom<&#lifetime anchor_lang::solana_program::instruction::Instruction> for #context_name<#lifetime> {
-            type Error = Error;
-    
-            fn try_from(ix: &#lifetime anchor_lang::solana_program::instruction::Instruction) -> Result<#context_name<#lifetime>> {
-                require_keys_eq!(ix.program_id, ID, ErrorCode::InvalidProgramId);
-
-                require!(ix.data[..8].eq(&Self::DISCRIMINATOR), ErrorCode::InstructionDidNotDeserialize);
-
-                let accounts = #accounts_type::<#lifetime>::try_from(&ix.accounts)?;
-                let args = #args_type::try_from_slice(&ix.data[8..])?;
-
-                Ok(#context_name {
-                    accounts,
-                    args
-                })
-            }
-        }
-    };
-
-    // Convert the generated implementation back into tokens and return it
-    TokenStream::from(expanded)
+    }.into()
 }
 
 #[proc_macro_derive(TryFromAccountMetas)]
@@ -194,6 +221,15 @@ pub fn try_from_account_metas(input: TokenStream) -> TokenStream {
                 }
 
                 #account_generators
+            }
+        }
+
+        impl<#lifetime> #accounts_name<#lifetime> {
+            fn try_remaining_accounts_from(value: &#lifetime Vec<AccountMeta>) -> Result<Vec<&#lifetime AccountMeta>> {
+                if value.len() < #accounts_length {
+                    return Err(ProgramError::NotEnoughAccountKeys.into());
+                }
+                Ok(value[#accounts_length..].iter().map(|a| a).collect())
             }
         }
     };

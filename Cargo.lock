@@ -136,6 +136,8 @@ version = "0.1.0"
 dependencies = [
  "anchor-i11n-derive",
  "anchor-lang",
+ "hex-literal",
+ "solana-program",
 ]
 
 [[package]]
@@ -143,6 +145,7 @@ name = "anchor-i11n-derive"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "convert_case",
  "quote",
  "sha2 0.10.8",
  "syn 1.0.109",
@@ -636,6 +639,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7144d30dcf0fafbce74250a3963025d8d52177934239851c917d29f1df280c2"
 
 [[package]]
+name = "convert_case"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -827,6 +839,12 @@ checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
 dependencies = [
  "unicode-segmentation",
 ]
+
+[[package]]
+name = "hex-literal"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hmac"
@@ -1424,9 +1442,9 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "solana-frozen-abi"
-version = "1.18.11"
+version = "1.18.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b8177685ab2bc8cc8b3bf63aa1eaa0580d5af850ecefac323ca1c2473085d77"
+checksum = "35a0b24cc4d0ebd5fd45d6bd47bed3790f8a75ade67af8ff24a3d719a8bc93bc"
 dependencies = [
  "block-buffer 0.10.4",
  "bs58 0.4.0",
@@ -1449,9 +1467,9 @@ dependencies = [
 
 [[package]]
 name = "solana-frozen-abi-macro"
-version = "1.18.11"
+version = "1.18.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a68241cad17b74c6034a68ba4890632d409a2c886e7bead9c1e1432befdb7c9"
+checksum = "51600f4066d3663ab2981fd24e77a8c2e65f5d20ea71b550b853ca9ae40eee7f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1461,9 +1479,9 @@ dependencies = [
 
 [[package]]
 name = "solana-program"
-version = "1.18.11"
+version = "1.18.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bddf573103c890b4ab8f9a6641d4f969d4148bce9a451c263f4a62afa949fae"
+checksum = "2a5513a02d622ba89e76baf4b49d25ae20c2c2c623fced12b0d6dd7b8f23e006"
 dependencies = [
  "ark-bn254",
  "ark-ec",
@@ -1516,9 +1534,9 @@ dependencies = [
 
 [[package]]
 name = "solana-sdk-macro"
-version = "1.18.11"
+version = "1.18.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "869483c05f18d37d4d95a08d9e05e00a4f76a8c8349aeedeee9ba2d013cbacde"
+checksum = "5cb099b2f9c0a65a6f23ced791325141cd68c27b04d11c04fef838a00f613861"
 dependencies = [
  "bs58 0.4.0",
  "proc-macro2",
