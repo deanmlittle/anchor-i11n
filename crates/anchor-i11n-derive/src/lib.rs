@@ -1,8 +1,10 @@
+use std::{borrow::BorrowMut, path::Path};
+
 use convert_case::{Case, Casing};
 use proc_macro::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use sha2::{Digest, Sha256};
-use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, Type};
+use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, PathArguments, PathSegment, Type};
 
 #[proc_macro_derive(TryFromInstruction)]
 pub fn try_from_instruction(input: TokenStream) -> TokenStream {
@@ -13,7 +15,7 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     let lifetime = match context_struct.generics.lifetimes().next() {
         Some(l) => {
             let lifetime_name = &l.lifetime;
-            quote! {#lifetime_name}
+            quote! { #lifetime_name }.into()
         }
         None => quote! {},
     };
@@ -30,20 +32,10 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
                             if let Type::Path(type_path) = &field.ty {
                                 let mut new_type_path = type_path.clone();
                                 if let Some(last_segment) = new_type_path.path.segments.last_mut() {
-                                    if let syn::PathArguments::AngleBracketed(ref mut args) = &mut last_segment.arguments {
-                                        let mut lifetime_name = String::new();
-                                        if let Some(arg) = args.args.first() {
-                                            if let syn::GenericArgument::Lifetime(lifetime) = arg {
-                                                lifetime_name = lifetime.ident.to_string();
-                                            }
-                                        }
-                                        // Change the lifetime notation from angle bracketed to colon2 separated
-                                        if let Some(colon_lifetime) = lifetime_name.rfind('\'') {
-                                            let new_lifetime_name = &lifetime_name[colon_lifetime + 1..];
-                                            args.args.clear(); // Remove the angle bracketed lifetime
-                                            args.args.push(syn::GenericArgument::Lifetime(syn::Lifetime::new(new_lifetime_name, Span::call_site().into())));
-                                        }
-                                    }
+                                    *last_segment = PathSegment {
+                                        ident: last_segment.ident.clone(),
+                                        arguments: PathArguments::None
+                                    };
                                 }
                                 has_accounts_path = Some(new_type_path);
                             }
@@ -78,7 +70,7 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
 
                 require!(ix.data[..8].eq(&#args_path::DISCRIMINATOR), ErrorCode::InstructionDidNotDeserialize);
 
-                let accounts = #accounts_path::try_from(&ix.accounts)?;
+                let accounts = #accounts_path::<#lifetime>::try_from(&ix.accounts)?;
                 let remaining_accounts = #accounts_path::try_remaining_accounts_from(&ix.accounts)?;
                 let args = #args_path::try_from_slice(&ix.data[8..])?;
 

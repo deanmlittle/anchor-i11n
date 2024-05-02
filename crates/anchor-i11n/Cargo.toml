@@ -1,8 +1,10 @@
 [package]
 name = "anchor-i11n"
 authors = ["Dean Little <@deanmlittle>"]
+description = "Derive idiomatic Anchor-compatible introspection contexts"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 [lib]
 name = "anchor_i11n"

@@ -34,7 +34,6 @@ mod tests {
 
         pub mod instructions {
             use super::*;
-            use anchor_lang::prelude::*;
             #[derive(AnchorDiscriminator, AnchorDeserialize, AnchorSerialize)]
             pub struct SharedAccountsRoute {
                 pub id: u8,
@@ -211,7 +210,7 @@ mod tests {
         }
 
         let ix = Instruction::new_with_bytes(
-            jupiter::ID, 
+            jupiter::ID,
             &hex!("c1209b3341d69c810f04000000261e000317013c000417010a00031c00640304002027b8ba04000034f881a201000000320000"), 
             accounts
         );

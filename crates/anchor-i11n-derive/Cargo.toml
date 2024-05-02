@@ -2,6 +2,8 @@
 name = "anchor-i11n-derive"
 version = "0.1.0"
 edition = "2021"
+description = "Derive idiomatic Anchor-compatible introspection contexts"
+license = "MIT"
 
 [lib]
 name = "anchor_i11n_derive"
