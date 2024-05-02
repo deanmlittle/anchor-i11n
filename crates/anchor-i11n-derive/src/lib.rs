@@ -1,7 +1,5 @@
-use std::{borrow::BorrowMut, path::Path};
-
 use convert_case::{Case, Casing};
-use proc_macro::{Span, TokenStream};
+use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use sha2::{Digest, Sha256};
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, PathArguments, PathSegment, Type};
@@ -20,6 +18,7 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
         None => quote! {},
     };
 
+    let mut has_accounts_info_lifetime = false;
     let mut has_accounts_path = None;
     let mut has_args_path = None;
 
@@ -32,6 +31,9 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
                             if let Type::Path(type_path) = &field.ty {
                                 let mut new_type_path = type_path.clone();
                                 if let Some(last_segment) = new_type_path.path.segments.last_mut() {
+                                    if matches!(last_segment.arguments, PathArguments::AngleBracketed(_)) {
+                                        has_accounts_info_lifetime = true;
+                                    }
                                     *last_segment = PathSegment {
                                         ident: last_segment.ident.clone(),
                                         arguments: PathArguments::None
@@ -60,6 +62,11 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     // Unwrap is safe here because we ensure both fields are present
     let (accounts_path, args_path) = (has_accounts_path.unwrap(), has_args_path.unwrap());
 
+    let accounts_derive = match has_accounts_info_lifetime {
+        true => quote! { #accounts_path::<#lifetime>::try_from(&ix.accounts)?; },
+        false => quote! { #accounts_path::try_from(&ix.accounts)?; }
+    };
+
     // Generate the discriminator
     let expanded = quote! {
         impl<#lifetime> TryFrom<&#lifetime anchor_lang::solana_program::instruction::Instruction> for #context_name<#lifetime> {
@@ -70,7 +77,7 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
 
                 require!(ix.data[..8].eq(&#args_path::DISCRIMINATOR), ErrorCode::InstructionDidNotDeserialize);
 
-                let accounts = #accounts_path::<#lifetime>::try_from(&ix.accounts)?;
+                let accounts = #accounts_derive;
                 let remaining_accounts = #accounts_path::try_remaining_accounts_from(&ix.accounts)?;
                 let args = #args_path::try_from_slice(&ix.data[8..])?;
 

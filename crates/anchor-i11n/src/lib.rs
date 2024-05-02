@@ -32,6 +32,14 @@ mod tests {
             pub remaining_accounts: Vec<&'info AccountMeta>,
         }
 
+        // Route
+        #[derive(TryFromInstruction)]
+        pub struct FakeRoute<'info> {
+            pub accounts: FakeRouteAccountMetas,
+            pub args: instructions::SharedAccountsRoute,
+            pub remaining_accounts: Vec<&'info AccountMeta>,
+        }
+
         pub mod instructions {
             use super::*;
             #[derive(AnchorDiscriminator, AnchorDeserialize, AnchorSerialize)]
@@ -60,6 +68,10 @@ mod tests {
             pub token_2022_program: Option<&'info AccountMeta>,
             pub event_authority: &'info AccountMeta,
             pub program: &'info AccountMeta,
+        }
+        
+        #[derive(TryFromAccountMetas)]
+        pub struct FakeRouteAccountMetas {
         }
 
         // Common
