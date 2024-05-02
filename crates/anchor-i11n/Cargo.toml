@@ -11,7 +11,7 @@ name = "anchor_i11n"
 
 [dependencies] 
 anchor-lang = "^0.29.0"
-anchor-i11n-derive = { path = "../anchor-i11n-derive" }
+anchor-i11n-derive = { version = "0.1.0", path= "../anchor-i11n-derive" }
 
 [dev-dependencies]
 hex-literal = "0.4.1"
