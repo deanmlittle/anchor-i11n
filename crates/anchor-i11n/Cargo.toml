@@ -8,7 +8,7 @@ edition = "2021"
 name = "anchor_i11n"
 
 [dependencies] 
-anchor-lang = "0.29.0"
+anchor-lang = "^0.29.0"
 anchor-i11n-derive = { path = "../anchor-i11n-derive" }
 
 [dev-dependencies]

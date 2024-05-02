@@ -1,8 +1,8 @@
 use convert_case::{Case, Casing};
 use proc_macro::{Span, TokenStream};
 use quote::{quote, ToTokens};
+use sha2::{Digest, Sha256};
 use syn::{parse_macro_input, Data, DeriveInput, Fields, Ident, Type};
-use sha2::{Sha256, Digest};
 
 #[proc_macro_derive(TryFromInstruction)]
 pub fn try_from_instruction(input: TokenStream) -> TokenStream {
@@ -10,15 +10,12 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     let context_name = &context_struct.ident;
 
     // Extract lifetime from the generic parameters, if any
-    let lifetime = match context_struct
-    .generics
-    .lifetimes()
-    .next() {
+    let lifetime = match context_struct.generics.lifetimes().next() {
         Some(l) => {
             let lifetime_name = &l.lifetime;
             quote! {#lifetime_name}
-        },
-        None => quote!{}
+        }
+        None => quote! {},
     };
 
     let mut has_accounts_path = None;
@@ -75,7 +72,7 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl<#lifetime> TryFrom<&#lifetime anchor_lang::solana_program::instruction::Instruction> for #context_name<#lifetime> {
             type Error = Error;
-    
+
             fn try_from(ix: &#lifetime anchor_lang::solana_program::instruction::Instruction) -> Result<#context_name<#lifetime>> {
                 require_keys_eq!(ix.program_id, ID, ErrorCode::InvalidProgramId);
 
@@ -98,7 +95,6 @@ pub fn try_from_instruction(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-
 // Derive the discriminator from an instruction struct
 #[proc_macro_derive(AnchorDiscriminator)]
 pub fn anchor_discriminator(input: TokenStream) -> TokenStream {
@@ -107,23 +103,26 @@ pub fn anchor_discriminator(input: TokenStream) -> TokenStream {
     let mut hasher = Sha256::new();
     hasher.update(format!("global:{}", args_type.to_string().to_case(Case::Snake)).as_bytes());
 
-    let mut discriminator_bytes: [u8;8] = [0u8;8];
+    let mut discriminator_bytes: [u8; 8] = [0u8; 8];
     discriminator_bytes.clone_from_slice(&hasher.finalize().to_vec()[..8]);
 
-    let discriminator: Vec<_> = discriminator_bytes.into_iter().map(|i| {
-        let idx = i as u8;
-        quote! { #idx }
-    }).collect();
+    let discriminator: Vec<_> = discriminator_bytes
+        .into_iter()
+        .map(|i| {
+            let idx = i as u8;
+            quote! { #idx }
+        })
+        .collect();
 
-
-    quote! { 
+    quote! {
         impl Discriminator for #args_type {
             const DISCRIMINATOR: [u8; 8] = [#(#discriminator),*];
             fn discriminator() -> [u8; 8] {
                 Self::DISCRIMINATOR
             }
         }
-    }.into()
+    }
+    .into()
 }
 
 #[proc_macro_derive(TryFromAccountMetas)]
@@ -132,15 +131,12 @@ pub fn try_from_account_metas(input: TokenStream) -> TokenStream {
     let accounts_name = &accounts_struct.ident;
 
     // Extract lifetime from the generic parameters, if any
-    let lifetime = match accounts_struct
-    .generics
-    .lifetimes()
-    .next() {
+    let lifetime = match accounts_struct.generics.lifetimes().next() {
         Some(l) => {
             let lifetime_name = &l.lifetime;
             quote! {#lifetime_name}
-        },
-        None => quote!{}
+        }
+        None => quote! {},
     };
 
     // Extract the field names from the struct
@@ -170,26 +166,28 @@ pub fn try_from_account_metas(input: TokenStream) -> TokenStream {
 
     // Handle optional accounts
     let optional_accounts: Vec<_> = optional_account_names
-    .iter()
-    .map(|ident| {
-        let id = ident.to_token_stream();
-        quote! {
-            let #id = match &#id.pubkey.eq(&ID) {
-                true => None,
-                false => Some(#id), // Dereference the reference here
-            };
-        }
-    })
-    .collect();
+        .iter()
+        .map(|ident| {
+            let id = ident.to_token_stream();
+            quote! {
+                let #id = match &#id.pubkey.eq(&ID) {
+                    true => None,
+                    false => Some(#id), // Dereference the reference here
+                };
+            }
+        })
+        .collect();
 
     // Extract the number of fields in the struct
     let accounts_length = account_names.len();
 
     // Generate array access expressions for the value vector
-    let value_indices: Vec<_> = (0..account_names.len()).map(|i| {
-        let idx = syn::Index::from(i);
-        quote! { &value[#idx] }
-    }).collect();
+    let value_indices: Vec<_> = (0..account_names.len())
+        .map(|i| {
+            let idx = syn::Index::from(i);
+            quote! { &value[#idx] }
+        })
+        .collect();
 
     let account_generators = match account_names.len() > 0 {
         true => quote! {
@@ -207,14 +205,14 @@ pub fn try_from_account_metas(input: TokenStream) -> TokenStream {
         },
         false => quote! {
             Ok(Self {})
-        }
+        },
     };
-    
+
     // Generate the implementation
     let expanded = quote! {
         impl<#lifetime> TryFrom<&#lifetime Vec<AccountMeta>> for #accounts_name<#lifetime> {
             type Error = Error;
-    
+
             fn try_from(value: &#lifetime Vec<AccountMeta>) -> Result<Self> {
                 if value.len() < #accounts_length {
                     return Err(ProgramError::NotEnoughAccountKeys.into());
